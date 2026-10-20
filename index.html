@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ResumeIQ · AI Resume Analyzer &amp; Job Recommendation</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- ================= AUTH SCREEN ================= -->
+<div id="authScreen" class="auth-wrap">
+  <div class="auth-card">
+    <div class="logo-big">Resume<span>IQ</span></div>
+    <p class="tagline">AI-Based Resume Analyzer &amp; Personalized Job Recommendation System</p>
+
+    <div class="tabs-mini">
+      <button class="on" data-authtab="login">Login</button>
+      <button data-authtab="register">Register</button>
+    </div>
+
+    <form id="loginForm" class="auth-form">
+      <label>Email <input type="email" id="loginEmail" value="demo@student.com" required></label>
+      <label>Password <input type="password" id="loginPass" value="demo1234" required></label>
+      <button class="btn primary" type="submit">Sign in</button>
+      <p class="hint">Demo account is pre-filled · demo@student.com / demo1234</p>
+    </form>
+
+    <form id="registerForm" class="auth-form hidden">
+      <label>Full name <input type="text" id="regName" placeholder="Harini G" required></label>
+      <label>Email <input type="email" id="regEmail" placeholder="you@college.edu" required></label>
+      <label>Target role
+        <select id="regRole">
+          <option>Software Engineer</option>
+          <option>Full Stack Developer</option>
+          <option>Data Analyst</option>
+          <option>ML Engineer</option>
+          <option>Database Developer</option>
+        </select>
+      </label>
+      <label>Password <input type="password" id="regPass" placeholder="min 6 characters" required></label>
+      <button class="btn primary" type="submit">Create account</button>
+    </form>
+    <p id="authMsg" class="msg"></p>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app" class="hidden">
+  <aside class="sidebar">
+    <div class="logo">Resume<span>IQ</span></div>
+    <nav>
+      <button class="nav on" data-view="dashboard">Dashboard</button>
+      <button class="nav" data-view="analyze">Analyze Resume</button>
+      <button class="nav" data-view="recommend">Job Recommendations</button>
+      <button class="nav" data-view="applications">My Applications</button>
+      <button class="nav" data-view="database">Database &amp; SQL</button>
+    </nav>
+    <div class="side-foot">
+      <div class="who" id="whoName">—</div>
+      <div class="who-mail" id="whoMail">—</div>
+      <button class="btn ghost small" id="logoutBtn">Log out</button>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <!-- ---------- DASHBOARD ---------- -->
+    <section id="view-dashboard" class="view">
+      <h1>Dashboard</h1>
+      <p class="sub">Overview of your profile, resumes and applications (data served straight from the DBMS views).</p>
+      <div class="cards" id="statCards"></div>
+      <div class="panel">
+        <h3>Latest Resume Analysis</h3>
+        <div id="latestAnalysis" class="muted">No resume analysed yet. Go to <b>Analyze Resume</b>.</div>
+      </div>
+      <div class="panel">
+        <h3>Database Table Row Counts</h3>
+        <div class="cards small" id="tableCounts"></div>
+      </div>
+    </section>
+
+    <!-- ---------- ANALYZE ---------- -->
+    <section id="view-analyze" class="view hidden">
+      <h1>Analyze Resume</h1>
+      <p class="sub">Paste your resume text or upload a <code>.txt</code> file. The engine extracts skills (NLP step), computes ATS + skill + experience scores and stores everything in the database.</p>
+
+      <div class="panel">
+        <div class="row">
+          <input type="file" id="fileInput" accept=".txt,.md">
+          <button class="btn ghost" id="sampleBtn">Load sample resume</button>
+          <button class="btn ghost" id="clearBtn">Clear</button>
+        </div>
+        <textarea id="resumeText" rows="14" placeholder="Paste your resume here..."></textarea>
+        <button class="btn primary" id="analyzeBtn">Analyze Resume</button>
+        <span class="msg" id="analyzeMsg"></span>
+      </div>
+
+      <div id="analyzeResult" class="hidden">
+        <div class="panel">
+          <h3>Score Report</h3>
+          <div class="scores" id="scoreRings"></div>
+        </div>
+        <div class="panel">
+          <h3>Skills Detected <span class="pill" id="skillCount"></span></h3>
+          <div class="chips" id="detectedSkills"></div>
+        </div>
+        <div class="panel">
+          <h3>Top Job Matches</h3>
+          <p class="muted small-note">Computed with a single weighted SQL JOIN against <code>job_skills</code>.</p>
+          <div id="analyzeRecs" class="reclist"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- RECOMMENDATIONS ---------- -->
+    <section id="view-recommend" class="view hidden">
+      <h1>Personalized Job Recommendations</h1>
+      <p class="sub">Ranked using the weighted skill-overlap query stored in the <code>recommendations</code> table.</p>
+      <div class="panel"><div id="recList" class="reclist"></div></div>
+    </section>
+
+    <!-- ---------- APPLICATIONS ---------- -->
+    <section id="view-applications" class="view hidden">
+      <h1>My Applications</h1>
+      <p class="sub">Track every application. Status changes are timestamped automatically by the <code>trg_application_touch</code> trigger.</p>
+      <div class="panel">
+        <table class="data" id="appTable">
+          <thead><tr><th>#</th><th>Company</th><th>Role</th><th>Location</th><th>Status</th><th>Applied</th><th>Updated</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---------- DATABASE ---------- -->
+    <section id="view-database" class="view hidden">
+      <h1>Database &amp; SQL Console</h1>
+      <p class="sub">The DBMS layer: 9 normalized (3NF) tables, 2 bridge tables, 3 views, 6 indexes and 1 trigger. Run read-only queries live.</p>
+
+      <div class="panel">
+        <h3>Schema</h3>
+        <div id="schemaBox" class="schema-grid"></div>
+      </div>
+
+      <div class="panel">
+        <h3>SQL Console <span class="pill">read-only · SELECT / WITH</span></h3>
+        <div class="row wrap">
+          <button class="btn ghost small q" data-sql="SELECT * FROM v_job_skill_list">Job skill list (view)</button>
+          <button class="btn ghost small q" data-sql="SELECT * FROM v_user_dashboard">User dashboard (view)</button>
+          <button class="btn ghost small q" data-sql="SELECT s.category, COUNT(*) AS skill_count FROM skills s GROUP BY s.category ORDER BY skill_count DESC">Skills per category</button>
+          <button class="btn ghost small q" data-sql="SELECT j.company, j.job_title, ROUND(AVG(js.weight),2) AS avg_weight FROM jobs j JOIN job_skills js ON js.job_id=j.job_id GROUP BY j.job_id ORDER BY avg_weight DESC LIMIT 10">Avg skill weight per job</button>
+          <button class="btn ghost small q" data-sql="SELECT u.full_name, a.status, j.company, j.job_title FROM applications a JOIN users u ON u.user_id=a.user_id JOIN jobs j ON j.job_id=a.job_id">Applications JOIN</button>
+        </div>
+        <textarea id="sqlBox" rows="5">SELECT * FROM v_job_skill_list LIMIT 5;</textarea>
+        <button class="btn primary" id="runSql">Run Query</button>
+        <span class="msg" id="sqlMsg"></span>
+        <div id="sqlResult" class="sql-result"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
